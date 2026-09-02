@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EventSphere - แพลตฟอร์มจองบัตรและกิจกรรมยอดนิยมในไทย</title>
+  <meta name="description" content="ค้นหา จองบัตรคอนเสิร์ต เวิร์กช็อป สัมมนา และงานวิ่งในไทย พร้อมระบบตั๋ว E-Ticket และ QR Code สแกนเข้างาน">
+
+  <!-- Google Fonts: Plus Jakarta Sans & Prompt (Thai) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Chart.js for Admin Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Supabase JS Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- ==========================================================================
+       1. App Header & Navigation
+       ========================================================================== -->
+  <header class="app-header">
+    <div class="container container-wide">
+      <nav class="navbar">
+        <!-- Brand Logo -->
+        <a href="#home" class="brand" data-nav="home">
+          <div class="brand-icon">
+            <i class="fa-solid fa-ticket-simple"></i>
+          </div>
+          <span>Event<span style="color: var(--accent-sky);">Sphere</span></span>
+        </a>
+
+        <!-- Main Navigation Links -->
+        <ul class="nav-links">
+          <li>
+            <a href="#home" class="nav-link active" data-nav="home">
+              <i class="fa-solid fa-compass"></i>
+              <span>ค้นหากิจกรรม</span>
+            </a>
+          </li>
+          <li>
+            <a href="#calendar" class="nav-link" data-nav="calendar">
+              <i class="fa-regular fa-calendar-days"></i>
+              <span>ปฏิทินอีเวนต์</span>
+            </a>
+          </li>
+          <li>
+            <a href="#my-bookings" class="nav-link" data-nav="my-bookings">
+              <i class="fa-solid fa-receipt"></i>
+              <span>บัตรของฉัน</span>
+            </a>
+          </li>
+          <li>
+            <a href="#admin" class="nav-link" data-nav="admin" id="navLinkAdmin">
+              <i class="fa-solid fa-user-shield"></i>
+              <span>ระบบหลังบ้านผู้จัด (Admin)</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- Right Side Nav Actions -->
+        <div class="nav-actions">
+          <!-- Guide Modal Button -->
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('quickGuideModal').classList.add('show');" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.85rem; font-size: 0.85rem;">
+            <i class="fa-solid fa-circle-question" style="color: var(--accent-sky);"></i>
+            <span>คู่มือการใช้งาน</span>
+          </button>
+
+          <!-- Theme Dark/Light Mode Toggle -->
+          <button class="btn-icon-circle" id="themeToggleBtn" title="สลับโหมดมืด/สว่าง">
+            <i class="fa-solid fa-sun" id="themeToggleIcon"></i>
+          </button>
+
+          <!-- Notification Bell -->
+          <div style="position: relative;">
+            <button class="btn-icon-circle" id="notifBellBtn" title="การแจ้งเตือน">
+              <i class="fa-regular fa-bell"></i>
+              <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
+            </button>
+
+            <!-- Notifications Dropdown -->
+            <div class="dropdown-menu notif-dropdown" id="notifDropdown">
+              <div class="dropdown-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">การแจ้งเตือนล่าสุด</span>
+                <button class="btn btn-secondary btn-sm" id="markAllReadBtn" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;">
+                  อ่านทั้งหมด
+                </button>
+              </div>
+              <div id="notifList">
+                <!-- Injected via JavaScript -->
+              </div>
+            </div>
+          </div>
+
+          <!-- User Profile Menu -->
+          <div class="user-profile-menu" id="userLoggedInWrap">
+            <button class="user-profile-btn" id="userProfileBtn">
+              <div class="user-avatar" id="navUserAvatar">U</div>
+              <span id="navUserName">วิศวภัทร</span>
+              <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; opacity: 0.7;"></i>
+            </button>
+
+            <!-- User Dropdown Menu -->
+            <div class="dropdown-menu" id="userProfileDropdown">
+              <div class="dropdown-header">
+                <div class="dropdown-user-name" id="dropdownUserName">วิศวภัทร ธนเกียรติคุณ</div>
+                <div class="dropdown-user-role" id="navUserRole">👤 สมาชิกทั่วไป</div>
+              </div>
+              <a class="dropdown-item" data-nav="my-bookings">
+                <i class="fa-solid fa-receipt"></i>
+                <span>ดูประวัติการจองและบัตร E-Ticket</span>
+              </a>
+              <a class="dropdown-item" data-nav="admin">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>แดชบอร์ดหลังบ้าน</span>
+              </a>
+              
+              <div class="dropdown-divider"></div>
+              
+              <div style="padding: 0.4rem 0.75rem; font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">
+                สลับบทบาททดสอบ (Quick Switch):
+              </div>
+              <div class="dropdown-item" id="switchDemoMemberBtn" style="color: var(--accent-sky);">
+                <i class="fa-solid fa-user"></i>
+                <span>สลับเป็น: สมาชิก (User)</span>
+              </div>
+              <div class="dropdown-item" id="switchDemoAdminBtn" style="color: var(--accent-amber);">
+                <i class="fa-solid fa-user-shield"></i>
+                <span>สลับเป็น: แอดมิน (Admin)</span>
+              </div>
+
+              <div class="dropdown-divider"></div>
+
+              <div class="dropdown-item" id="logoutBtn" style="color: var(--accent-rose);">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span>ออกจากระบบ</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Guest State Login Button -->
+          <div id="userGuestWrap" style="display: none;">
+            <button class="btn btn-primary btn-sm" data-action="open-login">
+              <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
+            </button>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       MAIN CONTENT CONTAINER
+       ========================================================================== -->
+  <main style="flex-grow: 1;">
+
+    <!-- ========================================================================
+         VIEW 1: HOME & EVENTS EXPLORER
+         ======================================================================== -->
+    <section id="view-home">
+      <!-- Hero Banner -->
+      <div class="hero-section">
+        <div class="container hero-content">
+          <div class="hero-tag">
+            <i class="fa-solid fa-ticket"></i> ศูนย์รวมกิจกรรม คอนเสิร์ต และเวิร์กช็อปยอดนิยม
+          </div>
+          <h1 class="hero-title">
+            จองตั๋วง่าย ได้บัตรทันที <br>
+            <span class="highlight">ไม่พลาดทุกกิจกรรมที่น่าสนใจ</span>
+          </h1>
+          <p class="hero-subtitle">
+            ค้นหากิจกรรมโปรด เช็คที่นั่งว่างแบบเรียลไทม์ รับบัตร E-Ticket พร้อม QR Code เข้างานได้ทันที หรือลงชื่อในคิวสำรองหากบัตรเต็ม
+          </p>
+
+          <div class="hero-stats">
+            <div class="stat-item">
+              <div class="stat-number">6+</div>
+              <div class="stat-label">กิจกรรมแนะนำสัปดาห์นี้</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">1,500+</div>
+              <div class="stat-label">ที่นั่งเปิดรับสมัคร</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">Real-time</div>
+              <div class="stat-label">เช็คโควตาที่นั่งสด</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">QR Code</div>
+              <div class="stat-label">สแกนเข้างานหน้าประตู</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="container">
+        <!-- Search & Filter Bar -->
+        <div class="filter-wrapper">
+          <div class="filter-grid">
+            <!-- Search Keyword -->
+            <div class="filter-input-group">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="searchInput" class="form-input" placeholder="ค้นหาชื่อกิจกรรม, วิทยากร, สถานที่จัดงาน...">
+            </div>
+
+            <!-- Date Filter -->
+            <div class="filter-input-group">
+              <i class="fa-regular fa-calendar"></i>
+              <input type="date" id="filterDateInput" class="form-input" title="เลือกวันที่จัดงาน">
+            </div>
+
+            <!-- Price Filter -->
+            <div class="filter-input-group">
+              <i class="fa-solid fa-tag"></i>
+              <select id="filterPriceSelect" class="form-select">
+                <option value="all">ทุกราคาบัตร</option>
+                <option value="free">ฟรี ไม่มีค่าใช้จ่าย</option>
+                <option value="paid">มีค่าใช้จ่าย</option>
+              </select>
+            </div>
+
+            <!-- Sort Select -->
+            <div class="filter-input-group">
+              <i class="fa-solid fa-arrow-down-short-wide"></i>
+              <select id="sortSelect" class="form-select">
+                <option value="date-asc">วันที่จัดงาน (เร็วที่สุด)</option>
+                <option value="date-desc">วันที่จัดงาน (ล่าสุด)</option>
+                <option value="popular">ยอดนิยม (ที่นั่งใกล้เต็ม)</option>
+                <option value="price-low">ราคา (น้อยไปมาก)</option>
+                <option value="price-high">ราคา (มากไปน้อย)</option>
+              </select>
+            </div>
+
+            <!-- Reset Filter Button -->
+            <button class="btn btn-secondary" id="resetFilterBtn" title="ล้างตัวกรอง">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+          </div>
+
+          <!-- Category Pills -->
+          <div class="category-pills">
+            <button class="category-pill active" data-category="all">
+              <i class="fa-solid fa-border-all"></i> ทั้งหมด
+            </button>
+            <button class="category-pill" data-category="music">
+              <i class="fa-solid fa-music"></i> ดนตรี & คอนเสิร์ต
+            </button>
+            <button class="category-pill" data-category="tech">
+              <i class="fa-solid fa-laptop-code"></i> เทคโนโลยี & AI
+            </button>
+            <button class="category-pill" data-category="workshop">
+              <i class="fa-solid fa-mug-hot"></i> เวิร์กช็อป & ไลฟ์สไตล์
+            </button>
+            <button class="category-pill" data-category="sport">
+              <i class="fa-solid fa-person-running"></i> วิ่ง & กีฬา
+            </button>
+            <button class="category-pill" data-category="seminar">
+              <i class="fa-solid fa-chart-line"></i> สัมมนาธุรกิจ
+            </button>
+          </div>
+        </div>
+
+        <!-- Section Header & Controls -->
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">
+              <i class="fa-solid fa-fire" style="color: var(--accent-rose);"></i> กิจกรรมที่เปิดรับสมัคร
+            </h2>
+            <span id="eventResultsCount" style="font-size: 0.88rem; color: var(--text-muted);">กำลังแสดงรายการ...</span>
+          </div>
+
+          <div class="view-controls">
+            <button class="view-toggle-btn active" id="viewGridBtn" title="แสดงแบบ Grid">
+              <i class="fa-solid fa-table-cells-large"></i>
+            </button>
+            <button class="view-toggle-btn" id="viewListBtn" title="แสดงแบบ List">
+              <i class="fa-solid fa-list"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Events Grid / List Container -->
+        <div id="eventsContainer" class="events-grid">
+          <!-- Injected via events.js -->
+        </div>
+
+        <!-- How It Works (3 Steps) Section -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 2.5rem 2rem; margin-bottom: 4rem; box-shadow: var(--shadow-sm);">
+          <div style="text-align: center; margin-bottom: 2rem;">
+            <span class="badge badge-tech" style="margin-bottom: 0.5rem;">ขั้นตอนง่ายๆ</span>
+            <h3 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary);">วิธีการจองและเข้าร่วมกิจกรรม</h3>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
+            <div style="background: var(--bg-subtle); padding: 1.5rem; border-radius: var(--radius-lg); text-align: center; border: 1px solid var(--border-color);">
+              <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary-600); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin: 0 auto 1rem; font-weight: 800;">1</div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem;">เลือกกิจกรรมที่สนใจ</h4>
+              <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">ค้นหากิจกรรมตามหมวดหมู่ ตรวจสอบวันเวลา สถานที่จัดงาน และโควตาที่นั่งว่าง</p>
+            </div>
+
+            <div style="background: var(--bg-subtle); padding: 1.5rem; border-radius: var(--radius-lg); text-align: center; border: 1px solid var(--border-color);">
+              <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--accent-cyan); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin: 0 auto 1rem; font-weight: 800;">2</div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem;">กรอกข้อมูล & ยืนยันที่นั่ง</h4>
+              <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">ระบุจำนวนที่นั่ง ข้อมูลผู้จอง พร้อมรับสิทธิ์ทันที หรือเข้าคิวสำรองหากบัตรเต็ม</p>
+            </div>
+
+            <div style="background: var(--bg-subtle); padding: 1.5rem; border-radius: var(--radius-lg); text-align: center; border: 1px solid var(--border-color);">
+              <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--accent-emerald); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin: 0 auto 1rem; font-weight: 800;">3</div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem;">รับ E-Ticket สแกนเข้างาน</h4>
+              <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">เปิดบัตร E-Ticket พร้อม QR Code จากมือถือเพื่อเช็คอิน ณ จุดลงทะเบียนเข้างาน</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         VIEW 2: CALENDAR VIEW
+         ======================================================================== -->
+    <section id="view-calendar" style="display: none; padding-top: 2.5rem;">
+      <div class="container">
+        <div class="calendar-container">
+          <!-- Calendar Header -->
+          <div class="calendar-header">
+            <div class="calendar-title-group">
+              <div class="brand-icon" style="width: 44px; height: 44px; font-size: 1.4rem;">
+                <i class="fa-regular fa-calendar-check"></i>
+              </div>
+              <div>
+                <h2 class="calendar-month-title" id="calendarMonthTitle">กันยายน 2569</h2>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">คลิกวันที่เพื่อดูและจองกิจกรรมในวันนั้น</span>
+              </div>
+            </div>
+
+            <div class="calendar-nav-buttons">
+              <button class="btn btn-secondary btn-sm" id="calPrevBtn">
+                <i class="fa-solid fa-chevron-left"></i> ก่อนหน้า
+              </button>
+              <button class="btn btn-secondary btn-sm" id="calTodayBtn">
+                เดือนนี้
+              </button>
+              <button class="btn btn-secondary btn-sm" id="calNextBtn">
+                ถัดไป <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Calendar Grid -->
+          <div class="calendar-grid" id="calendarGrid">
+            <!-- Injected via calendar.js -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         VIEW 3: MY BOOKINGS & TICKETS
+         ======================================================================== -->
+    <section id="view-my-bookings" style="display: none; padding: 3rem 0;">
+      <div class="container container-narrow">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+          <div>
+            <h2 style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.35rem;">
+              <i class="fa-solid fa-receipt" style="color: var(--primary-500);"></i> รายการจองและบัตรของฉัน
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.92rem;">ดูบัตรดิจิทัล E-Ticket แก้ไขจำนวนที่นั่ง หรือยกเลิกการจอง</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="window.app.navigate('home')">
+            <i class="fa-solid fa-plus"></i> จองกิจกรรมเพิ่ม
+          </button>
+        </div>
+
+        <div id="myBookingsList">
+          <!-- Injected via booking.js -->
+        </div>
+
+        <div id="myBookingsEmpty" style="display: none; text-align: center; padding: 4rem 1rem; color: var(--text-muted); background: var(--bg-surface); border-radius: var(--radius-xl); border: 1px dashed var(--border-color);">
+          <i class="fa-solid fa-ticket-simple" style="font-size: 3rem; color: var(--primary-400); margin-bottom: 1rem; opacity: 0.7;"></i>
+          <h3 style="font-size: 1.25rem; color: var(--text-primary); font-weight: 700; margin-bottom: 0.5rem;">ยังไม่มีรายการจอง</h3>
+          <p style="font-size: 0.95rem; margin-bottom: 1.5rem;">คุณยังไม่ได้ทำการจองกิจกรรมใดๆ ลองค้นหากิจกรรมที่คุณสนใจแล้วเริ่มจองได้เลย</p>
+          <button class="btn btn-primary" onclick="window.app.navigate('home')">
+            <i class="fa-solid fa-compass"></i> ค้นหากิจกรรมทั้งหมด
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         VIEW 4: ADMIN PORTAL & DASHBOARD
+         ======================================================================== -->
+    <section id="view-admin" style="display: none; padding: 2.5rem 0 4rem;">
+      <div class="container container-wide">
+        <!-- Admin Header -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <span class="badge badge-warning"><i class="fa-solid fa-user-shield"></i> ระบบหลังบ้านผู้จัดกิจกรรม (Admin Portal)</span>
+            </div>
+            <h2 style="font-size: 2rem; font-weight: 800;">ภาพรวมสถิติและการจัดการอีเวนต์</h2>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary" onclick="window.supabaseService.openSettingsModal();" style="color: #3ecf8e; border-color: rgba(62, 207, 142, 0.4);">
+              <i class="fa-solid fa-database"></i> ตั้งค่า Supabase
+            </button>
+            <button class="btn btn-secondary" id="adminResetDataBtn" title="รีเซ็ตข้อมูลตัวอย่างทั้งหมด">
+              <i class="fa-solid fa-rotate-left"></i> รีเซ็ต Demo Data
+            </button>
+            <button class="btn btn-secondary" id="openQRScannerBtn">
+              <i class="fa-solid fa-qrcode"></i> สแกน QR เช็คอินหน้างาน
+            </button>
+            <button class="btn btn-primary" id="adminAddEventBtn">
+              <i class="fa-solid fa-circle-plus"></i> เพิ่มกิจกรรมใหม่
+            </button>
+          </div>
+        </div>
+
+        <!-- 1. Metric Cards Grid -->
+        <div class="admin-stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon-wrap stat-icon-blue">
+              <i class="fa-regular fa-calendar-check"></i>
+            </div>
+            <div>
+              <div class="stat-value" id="adminStatEvents">0</div>
+              <div class="stat-desc">กิจกรรมทั้งหมดในระบบ</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrap stat-icon-emerald">
+              <i class="fa-solid fa-receipt"></i>
+            </div>
+            <div>
+              <div class="stat-value" id="adminStatBookings">0</div>
+              <div class="stat-desc">ยอดคำสั่งจองสำเร็จ</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrap stat-icon-purple">
+              <i class="fa-solid fa-users"></i>
+            </div>
+            <div>
+              <div class="stat-value" id="adminStatAttendees">0 คน</div>
+              <div class="stat-desc">ผู้เข้าร่วมงานทั้งหมด</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrap stat-icon-amber">
+              <i class="fa-solid fa-sack-dollar"></i>
+            </div>
+            <div>
+              <div class="stat-value" id="adminStatRevenue">฿0</div>
+              <div class="stat-desc">ยอดรายได้รวม</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Interactive Charts Section -->
+        <div class="admin-charts-grid">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3 class="chart-title"><i class="fa-solid fa-chart-column" style="color: var(--primary-500); margin-right: 0.5rem;"></i> สรุปยอดจอง vs โควตาคงเหลือแต่ละกิจกรรม</h3>
+            </div>
+            <div class="chart-body">
+              <canvas id="adminEventsBarChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3 class="chart-title"><i class="fa-solid fa-chart-pie" style="color: var(--accent-cyan); margin-right: 0.5rem;"></i> สัดส่วนผู้เข้าร่วมตามหมวดหมู่</h3>
+            </div>
+            <div class="chart-body">
+              <canvas id="adminCategoryDonutChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Events Management Table -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 1.75rem; margin-bottom: 2.5rem; box-shadow: var(--shadow-md);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1.25rem; font-weight: 700;">
+              <i class="fa-solid fa-list-check" style="color: var(--primary-500); margin-right: 0.5rem;"></i> จัดการกิจกรรม (เพิ่ม / แก้ไข / ปรับโควตา / ลบ)
+            </h3>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>ชื่อกิจกรรม & สถานที่</th>
+                  <th>หมวดหมู่</th>
+                  <th>วันที่จัดงาน</th>
+                  <th>โควตา (จองแล้ว/ความจุ)</th>
+                  <th>ราคาบัตร</th>
+                  <th>การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="adminEventsTableBody">
+                <!-- Injected via admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4. Attendees & Bookings Management Table -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 1.75rem; box-shadow: var(--shadow-md);">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+              <h3 style="font-size: 1.25rem; font-weight: 700;">
+                <i class="fa-solid fa-users-viewfinder" style="color: var(--accent-emerald); margin-right: 0.5rem;"></i> รายชื่อผู้จองและเช็คอินเข้างาน (Attendees List)
+              </h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">ตรวจสอบข้อมูลผู้จอง กดเช็คอินหน้างาน และส่งออกไฟล์รายงาน</p>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+              <!-- Filter by event -->
+              <select id="adminAttendeeEventFilter" class="form-select" style="width: auto; min-width: 200px;">
+                <option value="all">ทุกกิจกรรม</option>
+              </select>
+
+              <!-- Search attendee -->
+              <input type="text" id="adminAttendeeSearchInput" class="form-input" style="width: 220px;" placeholder="ค้นหาชื่อ, เบอร์โทร...">
+
+              <!-- Export CSV Button -->
+              <button class="btn btn-secondary" id="adminExportCsvBtn" title="ส่งออกไฟล์ Excel/CSV (ภาษาไทย UTF-8 BOM)">
+                <i class="fa-solid fa-file-excel" style="color: var(--accent-emerald);"></i> ส่งออก Excel/CSV
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>รหัสการจอง</th>
+                  <th>ชื่อผู้จอง & ติดต่อ</th>
+                  <th>กิจกรรม</th>
+                  <th>จำนวนที่นั่ง</th>
+                  <th>สถานะ</th>
+                  <th>การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="adminAttendeesTableBody">
+                <!-- Injected via admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       MODALS & DIALOGS
+       ========================================================================== -->
+
+  <!-- Modal 0: Quick Step-by-step Guide Modal -->
+  <div class="modal-overlay" id="quickGuideModal">
+    <div class="modal-container modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-book-open" style="color: var(--accent-sky);"></i> คู่มือและขั้นตอนการใช้งานระบบ (Quick Guide)</h3>
+        <button class="modal-close-btn" data-action="close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 1.75rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem;">
+          <div style="background: var(--bg-subtle); padding: 1.25rem; border-radius: var(--radius-lg); border-left: 4px solid var(--primary-600);">
+            <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">
+              👤 1. สำหรับผู้ใช้งาน / ผู้จองบัตร
+            </h4>
+            <ul style="padding-left: 1.25rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+              <li><strong>ค้นหากิจกรรม:</strong> ใช้แถบค้นหา กรองตามหมวดหมู่ หรือกดดูผ่านปฏิทิน</li>
+              <li><strong>จองบัตร:</strong> กด "จองเลย" เลือกจำนวนที่นั่ง ระบบจะตรวจสอบโควตาสด ไม่ให้จองเกิน</li>
+              <li><strong>คิวสำรอง:</strong> หากบัตรเต็ม สามารถกด "ลงชื่อในคิวสำรอง" ระบบจะเลื่อนเป็นตัวจริงอัตโนมัติเมื่อมีที่ว่าง</li>
+              <li><strong>ดูตั๋ว & เช็คอิน:</strong> ดูบัตร E-Ticket พร้อม QR Code ในหน้า "บัตรของฉัน"</li>
+              <li><strong>แก้ไข/ยกเลิก:</strong> สามารถเปลี่ยนจำนวนที่นั่งหรือยกเลิกได้เองก่อนเริ่มงาน 24 ชม.</li>
+            </ul>
+          </div>
+
+          <div style="background: var(--bg-subtle); padding: 1.25rem; border-radius: var(--radius-lg); border-left: 4px solid var(--accent-amber);">
+            <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">
+              👑 2. สำหรับผู้จัดงาน / แอดมิน (Admin)
+            </h4>
+            <ul style="padding-left: 1.25rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+              <li><strong>สลับโหมด:</strong> กดที่รูปโปรไฟล์มุมขวาบน > เลือก "สลับเป็น: แอดมิน"</li>
+              <li><strong>ดูกราฟสรุป:</strong> กราฟยอดจอง vs โควตาคงเหลือ และสัดส่วนหมวดหมู่</li>
+              <li><strong>เพิ่ม/แก้ไขกิจกรรม:</strong> กดปุ่ม "เพิ่มกิจกรรมใหม่" หรือแก้ไขโควตาที่นั่ง</li>
+              <li><strong>สแกนเช็คอิน:</strong> กดปุ่ม "สแกน QR เช็คอิน" เพื่อสแกนตั๋วหน้างาน</li>
+              <li><strong>ส่งออกข้อมูล:</strong> กด "ส่งออก Excel/CSV" ได้ไฟล์ภาษาไทยถูกต้อง 100%</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="text-align: center; background: rgba(37,99,235,0.08); padding: 1rem; border-radius: var(--radius-md);">
+          <span style="font-size: 0.9rem; color: var(--text-primary); font-weight: 600;">
+            💡 เคล็ดลับ: คุณสามารถทดลองกดปุ่มสลับธีม ☀️/🌙 ที่มุมขวาบน เพื่อดูการแสดงผลในทั้งสองโหมดได้ทันที
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" data-action="close-modal">เข้าใจแล้ว เริ่มใช้งานเลย</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 1: Auth Modal (Login / Register / Google) -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-sm active" id="authTabLogin" onclick="window.auth.showAuthModal('login')">เข้าสู่ระบบ</button>
+          <button class="btn btn-sm" id="authTabRegister" onclick="window.auth.showAuthModal('register')">สมัครสมาชิก</button>
+        </div>
+        <button class="modal-close-btn" data-action="close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <button class="btn btn-secondary btn-full" id="googleLoginBtn" style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          เข้าสู่ระบบด้วย Google
+        </button>
+
+        <div style="display: flex; align-items: center; margin-bottom: 1.25rem;">
+          <div style="flex-grow: 1; height: 1px; background: var(--border-color);"></div>
+          <span style="padding: 0 0.75rem; font-size: 0.78rem; color: var(--text-muted);">หรือใช้อีเมล</span>
+          <div style="flex-grow: 1; height: 1px; background: var(--border-color);"></div>
+        </div>
+
+        <!-- Login Form -->
+        <div id="loginSection">
+          <form id="loginForm">
+            <div class="form-group">
+              <label class="form-label">อีเมล</label>
+              <input type="email" id="loginEmail" class="form-input" placeholder="example@email.com" value="witsawa@demo.com" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">รหัสผ่าน</label>
+              <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" value="123456" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" style="margin-top: 0.5rem;">
+              เข้าสู่ระบบ
+            </button>
+          </form>
+        </div>
+
+        <!-- Register Form -->
+        <div id="registerSection" style="display: none;">
+          <form id="registerForm">
+            <div class="form-group">
+              <label class="form-label">ชื่อ - นามสกุล</label>
+              <input type="text" id="regName" class="form-input" placeholder="สมศักดิ์ มั่งคั่ง" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">อีเมล</label>
+              <input type="email" id="regEmail" class="form-input" placeholder="yourname@email.com" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">เบอร์โทรศัพท์</label>
+              <input type="tel" id="regPhone" class="form-input" placeholder="0812345678" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">กำหนดรหัสผ่าน</label>
+              <input type="password" id="regPassword" class="form-input" placeholder="อย่างน้อย 6 ตัวอักษร" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" style="margin-top: 0.5rem;">
+              สร้างบัญชีผู้ใช้
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Event Detail Modal -->
+  <div class="modal-overlay" id="eventDetailModal">
+    <div class="modal-container modal-lg">
+      <button class="modal-close-btn" data-action="close-modal" style="position: absolute; top: 1rem; right: 1rem; z-index: 10;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <div class="modal-body" id="eventDetailContent" style="padding: 0;">
+        <!-- Injected via events.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Booking & Quota Guard Modal -->
+  <div class="modal-overlay" id="bookingModal">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="bookingModalTitle">จองบัตรเข้าร่วมกิจกรรม</h3>
+        <button class="modal-close-btn" data-action="close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form id="bookingForm">
+        <div class="modal-body">
+          <div id="bookingEventSummary"></div>
+          <div id="bookingWaitlistNotice" style="display: none;"></div>
+
+          <div class="form-group">
+            <label class="form-label">ชื่อ - นามสกุลผู้จอง <span class="req">*</span></label>
+            <input type="text" id="bookName" class="form-input" placeholder="ระบุชื่อ-นามสกุล" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">เบอร์โทรศัพท์ <span class="req">*</span></label>
+              <input type="tel" id="bookPhone" class="form-input" placeholder="08xxxxxxxx" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">อีเมล <span class="req">*</span></label>
+              <input type="email" id="bookEmail" class="form-input" placeholder="name@email.com" required>
+            </div>
+          </div>
+
+          <!-- Seats Selection with Quota Limiter -->
+          <div class="form-group" id="bookingSeatsGroup">
+            <label class="form-label">จำนวนที่นั่งที่ต้องการ</label>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-subtle); padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+              <div class="seat-picker">
+                <button type="button" class="seat-btn" id="seatBtnDec"><i class="fa-solid fa-minus"></i></button>
+                <span class="seat-count" id="selectedSeatCount">1</span>
+                <button type="button" class="seat-btn" id="seatBtnInc"><i class="fa-solid fa-plus"></i></button>
+              </div>
+
+              <div style="text-align: right;">
+                <div style="font-size: 0.78rem; color: var(--text-muted);">ยอดรวมสุทธิ</div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent-sky);" id="bookingTotalPrice">฿0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-action="close-modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary" id="bookingSubmitBtn">
+            ยืนยันการจองบัตร
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: E-Ticket Confirmation & QR Modal -->
+  <div class="modal-overlay" id="ticketModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-circle-check" style="color: var(--accent-emerald);"></i> บัตรดิจิทัล E-Ticket</h3>
+        <button class="modal-close-btn" data-action="close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body" id="ticketContainer">
+        <!-- Injected via booking.js -->
+      </div>
+
+      <div class="modal-footer no-print">
+        <button class="btn btn-secondary" id="ticketEmailPreviewBtn">
+          <i class="fa-regular fa-envelope"></i> ดูตัวอย่างอีเมลยืนยัน
+        </button>
+        <button class="btn btn-primary" id="printTicketBtn">
+          <i class="fa-solid fa-print"></i> พิมพ์ / บันทึกตั๋ว
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Simulated Email Notification Preview -->
+  <div class="modal-overlay" id="emailPreviewModal">
+    <div class="modal-container modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-envelope-open-text" style="color: var(--primary-500);"></i> กล่องข้อความอีเมลจำลอง (Email Inbox Preview)</h3>
+        <button class="modal-close-btn" data-action="close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="emailPreviewContent">
+        <!-- Injected via notifications.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: Simulated LINE Notify Alert Card -->
+  <div class="modal-overlay" id="lineNotifyModal">
+    <div class="modal-container modal-sm">
+      <div class="modal-header" style="background: #06c755; color: #fff;">
+        <h3 class="modal-title" style="color: #fff;"><i class="fa-brands fa-line"></i> แจ้งเตือนผ่าน LINE Notify</h3>
+        <button class="modal-close-btn" data-action="close-modal" style="background: rgba(255,255,255,0.2); color: #fff;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="lineNotifyContent" style="padding: 1rem;">
+        <!-- Injected via notifications.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 7: QR Code Check-in Scanner -->
+  <div class="modal-overlay" id="qrScannerModal">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-qrcode" style="color: var(--accent-sky);"></i> สแกน QR Code เช็คอินเข้างาน</h3>
+        <button class="modal-close-btn" data-action="close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="scanner-viewport">
+          <div class="scanner-frame-box">
+            <div class="scanner-laser"></div>
+          </div>
+          <div style="position: absolute; bottom: 1rem; color: rgba(255,255,255,0.7); font-size: 0.8rem;">
+            ระบบพร้อมสแกน QR Code บัตรผู้เข้าร่วมงาน
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <form id="manualCheckInForm" style="display: flex; gap: 0.5rem;">
+            <input type="text" id="manualTicketIdInput" class="form-input" placeholder="หรือกรอกรหัสตั๋ว เช่น EVT-982101">
+            <button type="submit" class="btn btn-primary">เช็คอิน</button>
+          </form>
+        </div>
+
+        <div id="scanResultBox" style="display: none; margin-top: 1.25rem;">
+          <!-- Injected via qr-scanner.js -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 8: Admin Event Add / Edit Form -->
+  <div class="modal-overlay" id="adminEventFormModal">
+    <div class="modal-container modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="adminEventFormModalTitle">เพิ่มกิจกรรมใหม่</h3>
+        <button class="modal-close-btn" data-action="close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form id="adminEventForm">
+        <input type="hidden" id="adminEventId">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">ชื่อกิจกรรม <span class="req">*</span></label>
+            <input type="text" id="adminEventTitle" class="form-input" placeholder="เช่น Cat Expo 2026 หรือ เวิร์กช็อป AI" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">หมวดหมู่ <span class="req">*</span></label>
+              <select id="adminEventCategory" class="form-select" required>
+                <option value="music">ดนตรี & คอนเสิร์ต (Music & Concert)</option>
+                <option value="tech">เทคโนโลยี & AI (Tech & AI)</option>
+                <option value="workshop">เวิร์กช็อป (Workshop)</option>
+                <option value="sport">วิ่ง & กีฬา (Sport & Running)</option>
+                <option value="seminar">สัมมนาธุรกิจ (Seminar)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">วันที่จัดงาน <span class="req">*</span></label>
+              <input type="date" id="adminEventDate" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">เวลาจัดงาน <span class="req">*</span></label>
+              <input type="text" id="adminEventTime" class="form-input" placeholder="เช่น 14:00 - 22:00 น." required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">สถานที่จัดงาน <span class="req">*</span></label>
+              <input type="text" id="adminEventLocation" class="form-input" placeholder="เช่น สามย่านมิตรทาวน์ หรือ อิมแพ็ค อารีน่า" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">ผู้จัดงาน / วิทยากร</label>
+              <input type="text" id="adminEventSpeaker" class="form-input" placeholder="เช่น ผู้จัด: Cat Radio หรือ ทีมงานวิศวกร">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">จำนวนโควตาที่นั่ง (Capacity) <span class="req">*</span></label>
+              <input type="number" id="adminEventCapacity" class="form-input" min="1" max="10000" placeholder="100" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">ราคาบัตร (บาท) [ใส่ 0 = ฟรี] <span class="req">*</span></label>
+              <input type="number" id="adminEventPrice" class="form-input" min="0" placeholder="0" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">รูปภาพประกอบ (Image URL)</label>
+              <input type="url" id="adminEventImageUrl" class="form-input" placeholder="https://images.unsplash.com/...">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">รายละเอียดกิจกรรม (Description)</label>
+            <textarea id="adminEventDescription" class="form-input" rows="4" placeholder="ระบุรายละเอียดกิจกรรม กำหนดการ และสิ่งที่ผู้เข้าร่วมจะได้รับ..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-action="close-modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary">บันทึกข้อมูลกิจกรรม</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 9: Modify Booking Seats Modal -->
+  <div class="modal-overlay" id="modifyBookingModal">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-pen-to-square"></i> เปลี่ยนจำนวนที่นั่ง</h3>
+        <button class="modal-close-btn" data-action="close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form id="modifyBookingForm">
+        <input type="hidden" id="modifyBookingId">
+        <div class="modal-body">
+          <div id="modifyBookingSummary"></div>
+          <div class="form-group">
+            <label class="form-label">ระบุจำนวนที่นั่งใหม่ (1 - 10 ที่นั่ง)</label>
+            <input type="number" id="modifySeatsInput" class="form-input" min="1" max="10" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-action="close-modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 10: Calendar Day Events Modal -->
+  <div class="modal-overlay" id="calendarDayModal">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="calendarDayModalTitle">กิจกรรมประจำวัน</h3>
+        <button class="modal-close-btn" data-action="close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="calendarDayModalContent">
+        <!-- Injected via calendar.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 11: Supabase Database Configuration & Status Modal -->
+  <div class="modal-overlay" id="supabaseModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-database" style="color: #3ecf8e;"></i> ตั้งค่าเชื่อมต่อฐานข้อมูล Supabase</h3>
+        <button class="modal-close-btn" data-action="close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <div id="supabaseModalStatusBox" style="margin-bottom: 1.25rem;"></div>
+
+        <form id="supabaseConfigForm">
+          <div class="form-group">
+            <label class="form-label">Project URL (Supabase URL) <span class="req">*</span></label>
+            <input type="url" id="supabaseUrlInput" class="form-input" placeholder="https://your-project.supabase.co" required>
+            <div class="form-hint">ดูได้ที่ Supabase Dashboard > Settings > API > Project URL</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">API Key (anon / public key) <span class="req">*</span></label>
+            <input type="password" id="supabaseKeyInput" class="form-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+            <div class="form-hint">ดูได้ที่ Supabase Dashboard > Settings > API > Project API Keys > anon (public)</div>
+          </div>
+
+          <div style="background: var(--bg-subtle); padding: 1rem; border-radius: var(--radius-md); margin: 1.25rem 0; border: 1px solid var(--border-color);">
+            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem; font-size: 0.9rem;">
+              <i class="fa-solid fa-code" style="color: var(--primary-500);"></i> ไฟล์ SQL Database Schema
+            </div>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+              นำคำสั่งในไฟล์ <code>schema.sql</code> ไปวางและกด Run ใน <strong>Supabase SQL Editor</strong> เพื่อสร้างตารางทั้งหมดอัตโนมัติ
+            </p>
+            <button type="button" class="btn btn-secondary btn-sm" id="copySqlSchemaBtn">
+              <i class="fa-solid fa-copy"></i> คัดลอกคำสั่ง SQL Schema
+            </button>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button type="button" class="btn btn-secondary" data-action="close-modal">ปิด</button>
+            <button type="submit" class="btn btn-primary" style="background: #10b981;">
+              <i class="fa-solid fa-plug"></i> บันทึก & เชื่อมต่อ Supabase
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ==========================================================================
+       FOOTER
+       ========================================================================== -->
+  <footer class="app-footer">
+    <div class="container container-wide">
+      <div class="footer-grid">
+        <div>
+          <div class="brand" style="margin-bottom: 0.5rem;">
+            <div class="brand-icon" style="width: 32px; height: 32px; font-size: 1rem;">
+              <i class="fa-solid fa-ticket-simple"></i>
+            </div>
+            <span>Event<span style="color: var(--accent-sky);">Sphere</span></span>
+          </div>
+          <p class="footer-desc">
+            แพลตฟอร์มจองบัตรกิจกรรมและอีเวนต์ครบวงจร ยืนยันโควตาที่นั่งสด บัตรดิจิทัล E-Ticket พร้อม QR Code และเครื่องมือบริหารจัดการสำหรับผู้จัดงาน
+          </p>
+        </div>
+
+        <div>
+          <h4 class="footer-heading">หมวดหมู่กิจกรรม</h4>
+          <ul class="footer-links">
+            <li><a href="#home" class="footer-link" onclick="window.eventsModule.currentCategory='music'; window.eventsModule.renderEvents();">ดนตรี & คอนเสิร์ต</a></li>
+            <li><a href="#home" class="footer-link" onclick="window.eventsModule.currentCategory='tech'; window.eventsModule.renderEvents();">เทคโนโลยี & AI</a></li>
+            <li><a href="#home" class="footer-link" onclick="window.eventsModule.currentCategory='workshop'; window.eventsModule.renderEvents();">เวิร์กช็อป & ไลฟ์สไตล์</a></li>
+            <li><a href="#home" class="footer-link" onclick="window.eventsModule.currentCategory='sport'; window.eventsModule.renderEvents();">งานวิ่ง & กีฬา</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-heading">เมนูระบบ</h4>
+          <ul class="footer-links">
+            <li><a href="#calendar" class="footer-link" data-nav="calendar">ปฏิทินอีเวนต์</a></li>
+            <li><a href="#my-bookings" class="footer-link" data-nav="my-bookings">บัตร E-Ticket ของฉัน</a></li>
+            <li><a href="#admin" class="footer-link" data-nav="admin">ระบบหลังบ้านแอดมิน</a></li>
+            <li><a href="#" class="footer-link" onclick="window.supabaseService.openSettingsModal(); return false;">ตั้งค่า Supabase Backend</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-heading">ติดต่อเรา</h4>
+          <ul class="footer-links">
+            <li class="footer-link"><i class="fa-regular fa-envelope" style="margin-right: 0.4rem; color: var(--primary-500);"></i> contact@eventsphere.com</li>
+            <li class="footer-link"><i class="fa-solid fa-phone" style="margin-right: 0.4rem; color: var(--primary-500);"></i> 02-123-4567</li>
+            <li class="footer-link"><i class="fa-brands fa-line" style="margin-right: 0.4rem; color: #06c755;"></i> @eventsphere_th</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 EventSphere Thailand. All rights reserved.</div>
+        <div style="display: flex; gap: 1.25rem;">
+          <span style="color: var(--accent-sky); font-weight: 600;"><i class="fa-solid fa-shield-halved"></i> ระบบจองปลอดภัย รองรับ Supabase Backend</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       SCRIPTS
+       ========================================================================== -->
+  <script src="js/store.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/booking.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/qr-scanner.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
