@@ -45,63 +45,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Initialize data from LocalStorage or Supabase
   useEffect(() => {
-    const initData = async () => {
-      setLoading(true);
-
-      // Default demo user if none exists
-      const storedUser = localStorage.getItem(LOCAL_STORAGE_USER_KEY);
-      if (storedUser) {
-        try {
-          setCurrentUser(JSON.parse(storedUser));
-        } catch {
-          // fallback
-        }
-      } else {
-        const defaultUser: UserProfile = {
-          id: 'usr-demo-01',
-          name: 'สมชาย ใจดี',
-          email: 'somchai@example.com',
-          role: 'user',
-          avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-          phone: '081-234-5678',
-        };
-        setCurrentUser(defaultUser);
-        localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(defaultUser));
-      }
-
-      if (isSupabaseMode) {
-        try {
-          // Fetch events from Supabase
-          const { data: dbEvents, error: evError } = await supabase
-            .from('events')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-          if (!evError && dbEvents && dbEvents.length > 0) {
-            setEvents(dbEvents as EventItem[]);
-          } else {
-            setEvents(INITIAL_EVENTS);
-          }
-
-          // Fetch bookings
-          const { data: dbBookings, error: bkError } = await supabase
-            .from('bookings')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-          if (!bkError && dbBookings) {
-            setBookings(dbBookings as Booking[]);
-          }
-        } catch (err) {
-          console.warn('Supabase fetch failed, falling back to local store:', err);
-          loadLocalStore();
-        }
-      } else {
-        loadLocalStore();
-      }
-
-      setLoading(false);
-    };
+    let cancelled = false;
 
     const loadLocalStore = () => {
       const storedEvents = localStorage.getItem(LOCAL_STORAGE_EVENTS_KEY);
@@ -124,7 +68,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setBookings([]);
         }
       } else {
-        // Initial sample booking for demonstration
         const sampleBooking: Booking = {
           id: 'bk-demo-001',
           event_id: 'evt-ai-summit-2026',
@@ -144,16 +87,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
 
-    initData();
-  }, [isSupabaseMode]);
+    const initData = async () => {
+      setLoading(true);
 
-  // Sync to LocalStorage whenever events or bookings change
+      // Restore saved user
+      const storedUser = localStorage.getItem(LOCAL_STORAGE_USER_KEY);
+      if (storedUser) {
+        try { setCurrentUser(JSON.parse(storedUser)); } catch { /* ignore */ }
+      } else {
+        const defaultUser: UserProfile = {
+          id: 'usr-demo-01',
+          name: 'สมชาย ใจดี',
+          email: 'somchai@example.com',
+          role: 'user',
+          avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+          phone: '081-234-5678',
+        };
+        setCurrentUser(defaultUser);
+        localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(defaultUser));
+      }
+
+      if (isSupabaseConfigured) {
+        try {
+          const [evResult, bkResult] = await Promise.all([
+            supabase.from('events').select('*').order('created_at', { ascending: false }),
+            supabase.from('bookings').select('*').order('created_at', { ascending: false }),
+          ]);
+
+          if (cancelled) return;
+
+          if (!evResult.error && evResult.data && evResult.data.length > 0) {
+            setEvents(evResult.data as EventItem[]);
+          } else {
+            setEvents(INITIAL_EVENTS);
+          }
+
+          if (!bkResult.error && bkResult.data) {
+            setBookings(bkResult.data as Booking[]);
+          }
+        } catch (err) {
+          if (!cancelled) {
+            console.warn('Supabase fetch failed, using local storage:', err);
+            loadLocalStore();
+          }
+        }
+      } else {
+        loadLocalStore();
+      }
+
+      if (!cancelled) setLoading(false);
+    };
+
+    initData();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync to LocalStorage whenever events or bookings change (local mode only)
   useEffect(() => {
-    if (!loading && !isSupabaseMode) {
+    if (!loading && !isSupabaseConfigured) {
       localStorage.setItem(LOCAL_STORAGE_EVENTS_KEY, JSON.stringify(events));
       localStorage.setItem(LOCAL_STORAGE_BOOKINGS_KEY, JSON.stringify(bookings));
     }
-  }, [events, bookings, loading, isSupabaseMode]);
+  }, [events, bookings, loading]);
 
   // Sync user changes
   useEffect(() => {
