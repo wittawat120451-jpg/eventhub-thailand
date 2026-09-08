@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="50%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#brandGrad)"/>
+  <!-- Ticket shape inside -->
+  <path d="M8 10C8 8.89543 8.89543 8 10 8H22C23.1046 8 24 8.89543 24 10V14C22.8954 14 22 14.8954 22 16C22 17.1046 22.8954 18 24 18V22C24 23.1046 23.1046 24 22 24H10C8.89543 24 8 23.1046 8 22V18C9.10457 18 10 17.1046 10 16C10 14.8954 9.10457 14 8 14V10Z" fill="white" fill-opacity="0.95"/>
+  <!-- Star / Sparkle in center -->
+  <path d="M16 12L17.2 14.8L20 16L17.2 17.2L16 20L14.8 17.2L12 16L14.8 14.8L16 12Z" fill="#6366F1"/>
+</svg>

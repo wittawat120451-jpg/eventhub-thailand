@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   description: 'ค้นหา จองตั๋ว และเข้าร่วมงานสัมมนา เทคโนโลยี AI เวิร์กช็อป และเทศกาลดนตรีชั้นนำในประเทศไทย พร้อมระบบออก E-Ticket QR Code ทันสมัย',
   keywords: ['Event', 'จองกิจกรรม', 'สัมมนา', 'คอนเสิร์ต', 'เวิร์กช็อป', 'Next.js', 'Tailwind CSS', 'Supabase', 'E-Ticket'],
   authors: [{ name: 'EventHub Team' }],
+  icons: {
+    icon: '/icon.svg',
+  },
 };
 
 export const viewport = {
